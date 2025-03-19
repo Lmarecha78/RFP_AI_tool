@@ -106,7 +106,7 @@ if st.button("Submit"):
     if optional_question:
         prompt = (
             f"I'm a highly technical Sales Engineer responding to an RFP for customer '{customer_name}'. "
-            f"Provide a detailed, precise, and technical response sourced explicitly from official Skyhigh Security documentation. "
+            f"Provide a detailed, precise, and technical response sourced explicitly from official Skyhigh Security documentation and adapted to {customer_name}' . "
             f"Product: {product_choice}\n"
             f"Question: {optional_question}\n\nDetailed Technical Answer:"
         )
