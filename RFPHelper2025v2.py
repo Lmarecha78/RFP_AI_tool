@@ -58,7 +58,8 @@ def set_background(image_file):
     st.markdown(css, unsafe_allow_html=True)
 
 # Set custom background
-set_background('skyhigh_bg.png')
+set_background("https://raw.githubusercontent.com/lmarecha78/RFP_AI_tool/main/skyhigh_bg.png")
+
 
 # Branding and title
 st.title("Skyhigh Security - RFI/RFP AI Tool (Not for Production)")
