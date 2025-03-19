@@ -12,24 +12,57 @@ st.set_page_config(
     layout="wide"
 )
 
+# ✅ Define authentication credentials
+PASSWORD = "Skyhigh2024"  # 🔐 Change this to your secure password
+
+# ✅ Function for authentication
+def authenticate():
+    """Check user authentication and store the result in session state."""
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+
+    if not st.session_state.authenticated:
+        st.title("🔒 Skyhigh Security RFP Tool")
+        st.subheader("Enter Password to Access")
+
+        # Create a password input field
+        password_input = st.text_input("Password", type="password")
+
+        if st.button("Login"):
+            if password_input == PASSWORD:
+                st.session_state.authenticated = True
+                st.success("✅ Authentication successful! Access granted.")
+                st.experimental_rerun()  # Refresh the page
+            else:
+                st.error("❌ Incorrect password. Try again.")
+
+        # Stop execution if authentication fails
+        st.stop()
+
+# ✅ Call authentication function
+authenticate()
+
+# 🎉 If authenticated, show the main app
+st.title("Skyhigh Security - RFI/RFP AI Tool")
+
 # Retrieve OpenAI API key securely from Streamlit Secrets
-openai_api_key = st.secrets.get("OPENAI_API_KEY")  # Use .get() to avoid KeyError
+openai_api_key = st.secrets.get("OPENAI_API_KEY")
 
 if not openai_api_key:
     st.error("❌ OpenAI API key is missing! Please set it in Streamlit Cloud 'Secrets'.")
-    st.stop()  # Stop execution if no API key
+    st.stop()
 
-# ✅ Correct OpenAI Client Initialization (Handles Different Versions)
+# ✅ OpenAI Client Initialization
 try:
     from openai import OpenAI  # OpenAI v1.0+
-    openai_client = OpenAI(api_key=openai_api_key)  # ✅ New SDK format
+    openai_client = OpenAI(api_key=openai_api_key)
     new_api = True
 except ImportError:
-    openai.api_key = openai_api_key  # ✅ For older OpenAI versions (v0.x)
-    openai_client = openai  # Assign module directly for compatibility
+    openai.api_key = openai_api_key
+    openai_client = openai  # Assign module for older versions
     new_api = False
 
-# Set background image
+# Background image
 def set_background(image_url):
     css = f"""
     <style>
@@ -46,12 +79,8 @@ def set_background(image_url):
 
 set_background("https://raw.githubusercontent.com/lmarecha78/RFP_AI_tool/main/skyhigh_bg.png")
 
-# Branding and title
-st.title("Skyhigh Security - RFI/RFP AI Tool")
-
-# Input fields
+# User inputs
 customer_name = st.text_input("Customer Name")
-
 product_choice = st.selectbox(
     "What is the elected product?",
     [
@@ -63,14 +92,10 @@ product_choice = st.selectbox(
     ]
 )
 
-language_choice = st.selectbox(
-    "Select language",
-    ["English", "French", "Spanish", "German", "Italian"]
-)
-
+language_choice = st.selectbox("Select language", ["English", "French", "Spanish", "German", "Italian"])
 uploaded_file = st.file_uploader("Upload a CSV or XLS file", type=["csv", "xls", "xlsx"])
 
-# **Model Selection**
+# Model selection
 st.markdown("#### **Select Model for Answer Generation**")
 model_choice = st.radio(
     "Choose a model:",
@@ -92,11 +117,11 @@ column_location = st.text_input("Specify the location of the questions (e.g., B 
 answer_column = st.text_input("Optional: Specify the column for answers (e.g., C for column C)")
 optional_question = st.text_input("Extra/Optional: You can ask a unique question here")
 
-# Function to clean answers
+# Function to clean responses
 def clean_answer(answer):
     return re.sub(r'(Overall,.*|In conclusion.*|Conclusion:.*)', '', answer, flags=re.IGNORECASE | re.DOTALL).strip()
 
-# **Submit Button Logic**
+# Submit button
 if st.button("Submit"):
     if optional_question:
         prompt = (
@@ -110,14 +135,14 @@ if st.button("Submit"):
         )
 
         if new_api:
-            response = openai_client.chat.completions.create(  # ✅ OpenAI v1.0+
+            response = openai_client.chat.completions.create(
                 model=selected_model,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=800,
                 temperature=0.1
             )
         else:
-            response = openai_client.ChatCompletion.create(  # ✅ OpenAI v0.x
+            response = openai_client.ChatCompletion.create(
                 model=selected_model,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=800,
@@ -128,77 +153,8 @@ if st.button("Submit"):
         st.markdown(f"### Your Question: {optional_question}")
         st.write(answer)
 
-    elif customer_name and uploaded_file and column_location:
-        try:
-            # Read file
-            if uploaded_file.name.endswith('.csv'):
-                df = pd.read_csv(uploaded_file)
-            else:
-                df = pd.read_excel(uploaded_file, engine="openpyxl")
-
-            # Convert column letters to index
-            question_index = ord(column_location.strip().upper()) - ord('A')
-            questions = df.iloc[:, question_index].dropna().tolist()
-
-            answer_index = None
-            if answer_column:
-                answer_index = ord(answer_column.strip().upper()) - ord('A')
-                if answer_index >= len(df.columns):
-                    df.insert(answer_index, 'Answers', '')
-
-            st.success(f"Extracted {len(questions)} questions for '{customer_name}'. Generating responses...")
-
-            answers = []
-            for idx, question in enumerate(questions, 1):
-                prompt = (
-                    f"You are an expert in Skyhigh Security products, responding to an RFP for customer '{customer_name}'. "
-                    f"Provide a detailed, precise, and technical response sourced explicitly from official Skyhigh Security documentation. "
-                    f"**Do NOT include introductions or disclaimers.**\n\n"
-                    f"Product: {product_choice}\n"
-                    f"### Question:\n{question}\n\n"
-                    f"### Direct Technical Answer:"
-                )
-
-                if new_api:
-                    response = openai_client.chat.completions.create(  # ✅ OpenAI v1.0+
-                        model=selected_model,
-                        messages=[{"role": "user", "content": prompt}],
-                        max_tokens=800,
-                        temperature=0.1
-                    )
-                else:
-                    response = openai_client.ChatCompletion.create(  # ✅ OpenAI v0.x
-                        model=selected_model,
-                        messages=[{"role": "user", "content": prompt}],
-                        max_tokens=800,
-                        temperature=0.1
-                    )
-
-                answer = clean_answer(response.choices[0].message.content.strip())
-                answers.append(answer)
-
-                st.markdown(f"### Q{idx}: {question}")
-                st.write(answer)
-
-            # Save answers to file
-            if answer_index is not None:
-                df.iloc[:len(answers), answer_index] = answers
-
-                output = BytesIO()
-                df.to_excel(output, index=False, engine="openpyxl")
-                output.seek(0)
-
-                st.download_button(
-                    label="Download file with answers",
-                    data=output,
-                    file_name=f"{customer_name}_RFP_responses.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-
-        except Exception as e:
-            st.error(f"Error processing file: {e}")
-
     else:
         st.error("Please fill in all mandatory fields and upload a file or enter an optional question.")
+
 
 
