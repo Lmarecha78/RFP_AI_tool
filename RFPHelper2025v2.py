@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # ✅ Define authentication credentials
-PASSWORD = "Skyhigh2024"  # 🔐 Change this to your secure password
+PASSWORD = "Skyhigh@2025!"  # 🔐 Change this to your secure password
 
 # ✅ Function for authentication
 def authenticate():
