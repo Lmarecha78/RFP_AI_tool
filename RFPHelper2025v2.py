@@ -17,13 +17,16 @@ openai_api_key = st.secrets["OPENAI_API_KEY"]
 
 if not openai_api_key:
     st.error("❌ OpenAI API key is missing! Please set it in Streamlit Cloud 'Secrets'.")
-else:
-    # Check OpenAI package version and use the correct API call
-    try:
-        from openai import OpenAI  # Works for OpenAI v1.0+
-        openai_client = OpenAI(api_key=openai_api_key)  # ✅ New client method
-    except ImportError:
-        openai.api_key = openai_api_key  # ✅ For older OpenAI versions (v0.x)
+    st.stop()  # Stops the app from proceeding without an API key
+
+# Correct OpenAI client initialization for all versions
+try:
+    from openai import OpenAI  # New API (v1.0+)
+    openai_client = OpenAI(api_key=openai_api_key)  # ✅ Correct for v1.0+
+except ImportError:
+    import openai
+    openai.api_key = openai_api_key  # ✅ Correct for v0.x (older versions)
+    openai_client = openai  # Assign openai module directly for compatibility
 
 # Set background image
 def set_background(image_url):
