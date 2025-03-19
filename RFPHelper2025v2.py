@@ -13,20 +13,21 @@ st.set_page_config(
 )
 
 # Retrieve OpenAI API key securely from Streamlit Secrets
-openai_api_key = st.secrets["OPENAI_API_KEY"]
+openai_api_key = st.secrets.get("OPENAI_API_KEY")  # Use .get() to avoid KeyError
 
 if not openai_api_key:
     st.error("❌ OpenAI API key is missing! Please set it in Streamlit Cloud 'Secrets'.")
-    st.stop()  # Stops the app from proceeding without an API key
+    st.stop()  # Stop execution if no API key
 
-# Correct OpenAI client initialization for all versions
+# ✅ Correct OpenAI Client Initialization (Handles Different Versions)
 try:
-    from openai import OpenAI  # New API (v1.0+)
-    openai_client = OpenAI(api_key=openai_api_key)  # ✅ Correct for v1.0+
+    from openai import OpenAI  # OpenAI v1.0+
+    openai_client = OpenAI(api_key=openai_api_key)  # ✅ New SDK format
+    new_api = True
 except ImportError:
-    import openai
-    openai.api_key = openai_api_key  # ✅ Correct for v0.x (older versions)
-    openai_client = openai  # Assign openai module directly for compatibility
+    openai.api_key = openai_api_key  # ✅ For older OpenAI versions (v0.x)
+    openai_client = openai  # Assign module directly for compatibility
+    new_api = False
 
 # Set background image
 def set_background(image_url):
@@ -108,12 +109,20 @@ if st.button("Submit"):
             f"### Direct Answer (no intro, purely technical):"
         )
 
-        response = openai_client.chat.completions.create(
-            model=selected_model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=800,
-            temperature=0.1
-        )
+        if new_api:
+            response = openai_client.chat.completions.create(  # ✅ OpenAI v1.0+
+                model=selected_model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=800,
+                temperature=0.1
+            )
+        else:
+            response = openai_client.ChatCompletion.create(  # ✅ OpenAI v0.x
+                model=selected_model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=800,
+                temperature=0.1
+            )
 
         answer = clean_answer(response.choices[0].message.content.strip())
         st.markdown(f"### Your Question: {optional_question}")
@@ -150,12 +159,20 @@ if st.button("Submit"):
                     f"### Direct Technical Answer:"
                 )
 
-                response = openai_client.chat.completions.create(
-                    model=selected_model,
-                    messages=[{"role": "user", "content": prompt}],
-                    max_tokens=800,
-                    temperature=0.1
-                )
+                if new_api:
+                    response = openai_client.chat.completions.create(  # ✅ OpenAI v1.0+
+                        model=selected_model,
+                        messages=[{"role": "user", "content": prompt}],
+                        max_tokens=800,
+                        temperature=0.1
+                    )
+                else:
+                    response = openai_client.ChatCompletion.create(  # ✅ OpenAI v0.x
+                        model=selected_model,
+                        messages=[{"role": "user", "content": prompt}],
+                        max_tokens=800,
+                        temperature=0.1
+                    )
 
                 answer = clean_answer(response.choices[0].message.content.strip())
                 answers.append(answer)
@@ -183,4 +200,5 @@ if st.button("Submit"):
 
     else:
         st.error("Please fill in all mandatory fields and upload a file or enter an optional question.")
+
 
