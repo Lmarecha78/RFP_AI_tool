@@ -22,7 +22,7 @@ import re
 from io import BytesIO
 
 # Set your OpenAI API key (Replace this in production with a secure method)
-openai_api_key = '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'
+openai_api_key = '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'
 openai.api_key = openai_api_key
 
 # Streamlit page setup
