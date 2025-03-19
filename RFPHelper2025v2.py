@@ -33,31 +33,21 @@ st.set_page_config(
 )
 
 # Load background image
-def set_background(image_file):
-    with open(image_file, "rb") as image:
-        encoded = base64.b64encode(image.read()).decode()
+def set_background(image_url):
     css = f"""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
-
     .stApp {{
-        background-image: url('data:image/png;base64,{encoded}');
+        background-image: url("{image_url}");
         background-size: cover;
         background-repeat: no-repeat;
         background-position: center;
         background-attachment: fixed;
-        font-family: 'Roboto', sans-serif;
-    }}
-    h1 {{
-        font-size: 32px;
-        margin-top: 0;
-        padding-top: 10px;
     }}
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
 
-# Set custom background
+# Use the correct raw GitHub link
 set_background("https://raw.githubusercontent.com/lmarecha78/RFP_AI_tool/main/skyhigh_bg.png")
 
 
