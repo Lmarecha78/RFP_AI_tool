@@ -18,7 +18,12 @@ openai_api_key = st.secrets["OPENAI_API_KEY"]
 if not openai_api_key:
     st.error("❌ OpenAI API key is missing! Please set it in Streamlit Cloud 'Secrets'.")
 else:
-    openai_client = openai.OpenAI(api_key=openai_api_key)  # New API Client
+    # Check OpenAI package version and use the correct API call
+    try:
+        from openai import OpenAI  # Works for OpenAI v1.0+
+        openai_client = OpenAI(api_key=openai_api_key)  # ✅ New client method
+    except ImportError:
+        openai.api_key = openai_api_key  # ✅ For older OpenAI versions (v0.x)
 
 # Set background image
 def set_background(image_url):
@@ -175,3 +180,4 @@ if st.button("Submit"):
 
     else:
         st.error("Please fill in all mandatory fields and upload a file or enter an optional question.")
+
