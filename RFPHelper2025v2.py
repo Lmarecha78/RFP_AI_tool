@@ -32,7 +32,7 @@ def authenticate():
             if password_input == PASSWORD:
                 st.session_state.authenticated = True
                 st.success("✅ Authentication successful! Access granted.")
-                st.experimental_rerun()  # Refresh the page
+                st.rerun()  # ✅ Correct in Streamlit 1.18+
             else:
                 st.error("❌ Incorrect password. Try again.")
 
