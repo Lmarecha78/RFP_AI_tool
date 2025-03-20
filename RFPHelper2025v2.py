@@ -85,12 +85,14 @@ optional_question = st.text_input("Extra/Optional: You can ask a unique question
 
 # ✅ Function to clean answers (Removes any conclusion, benefits, or summary-like statements)
 def clean_answer(answer):
-    """Removes conclusion-like statements and benefit-driven content."""
-    # Remove common conclusion and benefit phrases
+    """Removes conclusion-like statements, benefits, and outcome-driven phrases from the response."""
+    # Patterns to detect and remove conclusions, benefit statements, and indirect summaries
     patterns = [
-        r'\b(Overall,|In conclusion,|Conclusion:|To summarize,|Thus,|Therefore,|Finally,|This enables|By deploying|This allows|This ensures).*',  # Generic conclusions
-        r'.*\b(enhancing|improving|achieving|helping to ensure|complying with|ensuring).*security posture.*',  # Compliance & posture statements
-        r'.*\b(this leads to|this results in|which results in|thereby improving|thus ensuring).*',  # Outcome statements
+        r'\b(Overall,|In conclusion,|Conclusion:|To summarize,|Thus,|Therefore,|Finally,|This enables|This ensures|This allows|This provides|This results in|By leveraging|By implementing).*',  # Generic conclusions & enablers
+        r'.*\b(enhancing|improving|achieving|helping to ensure|complying with|ensuring).*security posture.*',  # Compliance & security posture statements
+        r'.*\b(this leads to|this results in|which results in|thereby improving|thus ensuring).*',  # Outcome-driven statements
+        r'\b(By using|By adopting|By deploying|By integrating|By utilizing).*',  # "By doing X, you get Y" structures
+        r'\b(This approach|This strategy|This technology).*',  # Indirect conclusions
     ]
     
     for pattern in patterns:
@@ -106,8 +108,8 @@ if st.button("Submit"):
             f"Your answer should be **strictly technical**, focusing on architecture, specifications, security features, compliance, integrations, and standards. "
             f"Your response should be tailored to the specific needs of **{customer_name}** and their security requirements. "
             f"**DO NOT** include disclaimers, introductions, or any mention of knowledge limitations. "
-            f"**DO NOT** include conclusions, summaries, benefits, security posture improvements, or closing remarks. "
-            f"**Only provide the answer in a direct and structured format.**\n\n"
+            f"**DO NOT** include conclusions, summaries, benefits, security posture improvements, business impacts, or closing remarks. "
+            f"**Only provide the answer in a direct, structured format without any inferred benefits or conclusions.**\n\n"
             f"Customer: {customer_name}\n"
             f"Product: {product_choice}\n"
             f"### Question:\n{optional_question}\n\n"
@@ -121,7 +123,7 @@ if st.button("Submit"):
             temperature=0.1
         )
 
-        answer = clean_answer(response.choices[0].message.content.strip())  # ✅ Stronger cleaning
+        answer = clean_answer(response.choices[0].message.content.strip())  # ✅ Strongest cleaning applied
         st.markdown(f"### Your Question: {optional_question}")
         st.write(answer)
 
@@ -170,23 +172,9 @@ if st.button("Submit"):
                 st.markdown(f"### Q{idx}: {question}")
                 st.write(answer)
 
-            # Save answers to file
-            if answer_index is not None:
-                df.iloc[:len(answers), answer_index] = answers
-
-                output = BytesIO()
-                df.to_excel(output, index=False, engine="openpyxl")
-                output.seek(0)
-
-                st.download_button(
-                    label="Download file with answers",
-                    data=output,
-                    file_name=f"{customer_name}_RFP_responses.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-
         except Exception as e:
             st.error(f"Error processing file: {e}")
 
     else:
         st.error("Please fill in all mandatory fields and upload a file or enter an optional question.")
+
