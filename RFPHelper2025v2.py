@@ -140,7 +140,7 @@ if st.button("Submit"):
         st.error("❌ Please specify the location of the questions (e.g., B for column B).")
         st.stop()
 
-    if not uploaded_file and not optional_question:
+    if uploaded_file is None and not optional_question:
         st.error("❌ Please upload a file or enter an optional question.")
         st.stop()
 
@@ -176,4 +176,5 @@ if st.button("Submit"):
 
     else:
         st.error("Please fill in all mandatory fields and upload a file or enter an optional question.")
+
 
