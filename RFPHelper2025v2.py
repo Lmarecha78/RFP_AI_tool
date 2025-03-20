@@ -164,9 +164,9 @@ if st.button("Submit"):
                 st.markdown(f"### Q{idx}: {question}")
                 st.code(answer, language="markdown")
 
-                # ✅ Add working Copy button without page refresh
+                # ✅ Fixing Copy button placement
                 copy_button_html = f"""
-                <button onclick="copyToClipboard(`{answer}`)">📋 Copy</button>
+                <button style="margin-top: 5px;" onclick="copyToClipboard(`{answer}`)">📋 Copy</button>
                 """
                 st.markdown(copy_button_html, unsafe_allow_html=True)
 
@@ -189,3 +189,4 @@ if st.button("Submit"):
 
         except Exception as e:
             st.error(f"Error processing file: {e}")
+
