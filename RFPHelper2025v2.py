@@ -109,16 +109,16 @@ column_location = st.text_input("Specify the location of the questions (e.g., B 
 answer_column = st.text_input("Optional: Specify the column for answers (e.g., C for column C)", key="answer_column")
 optional_question = st.text_input("Extra/Optional: You can ask a unique question here", key="optional_question")
 
-# ✅ File Processing
-df = None
+# ✅ Store uploaded file in session state
 if uploaded_file:
+    st.session_state.uploaded_file = uploaded_file  # Store file for persistence
     try:
         file_extension = uploaded_file.name.split(".")[-1].lower()
         
         if file_extension == "csv":
-            df = pd.read_csv(uploaded_file)
+            st.session_state.df = pd.read_csv(uploaded_file)
         elif file_extension in ["xls", "xlsx"]:
-            df = pd.read_excel(uploaded_file)
+            st.session_state.df = pd.read_excel(uploaded_file)
         else:
             st.error("❌ Unsupported file type! Please upload a CSV or Excel file.")
             st.stop()
@@ -129,7 +129,9 @@ if uploaded_file:
         st.error(f"❌ Error reading the uploaded file: {e}")
         st.stop()
 
-# ✅ Improved Validation
+# ✅ Validation Fix: Ensure file persists
+df = st.session_state.get("df", None)
+
 if not customer_name:
     st.error("❌ Please enter a customer name.")
     st.stop()
@@ -138,7 +140,6 @@ if not column_location:
     st.error("❌ Please specify the location of the questions (e.g., B for column B).")
     st.stop()
 
-# ✅ FIXED: Correct Optional Question Handling
 if df is None and optional_question.strip() == "":
     st.error("❌ Please upload a file or enter an optional question.")
     st.stop()
