@@ -129,7 +129,7 @@ if uploaded_file:
         st.error(f"❌ Error reading the uploaded file: {e}")
         st.stop()
 
-# ✅ Validation
+# ✅ Improved Validation
 if not customer_name:
     st.error("❌ Please enter a customer name.")
     st.stop()
@@ -138,26 +138,21 @@ if not column_location:
     st.error("❌ Please specify the location of the questions (e.g., B for column B).")
     st.stop()
 
-if df is None and not optional_question:
+# ✅ FIXED: Correct Optional Question Handling
+if df is None and optional_question.strip() == "":
     st.error("❌ Please upload a file or enter an optional question.")
     st.stop()
 
-# Debugging Output
-st.write("### Debugging Info:")
-st.write(f"Uploaded file: {uploaded_file}")
-st.write(f"Customer Name: {customer_name}")
-st.write(f"Column Location: {column_location}")
-
 # Submit Button
 if st.button("Submit"):
-    if optional_question:
+    if optional_question.strip():
         prompt = (
             f"You are an expert in Skyhigh Security products, providing highly detailed technical responses for an RFP. "
             f"Your answer should be **strictly technical**, focusing on architecture, specifications, security features, compliance, integrations, and standards. "
             f"**DO NOT** include disclaimers, introductions, or any mention of knowledge limitations. **Only provide the answer**.\n\n"
             f"Customer: {customer_name}\n"
             f"Product: {product_choice}\n"
-            f"### Question:\n{optional_question}\n\n"
+            f"### Question:\n{optional_question.strip()}\n\n"
             f"### Direct Answer (no intro, purely technical):"
         )
 
@@ -176,7 +171,7 @@ if st.button("Submit"):
                 temperature=0.1
             )
 
-        st.markdown(f"### Your Question: {optional_question}")
+        st.markdown(f"### Your Question: {optional_question.strip()}")
         st.write(response.choices[0].message.content.strip())
 
     else:
