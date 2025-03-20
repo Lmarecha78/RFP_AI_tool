@@ -86,13 +86,12 @@ optional_question = st.text_input("Extra/Optional: You can ask a unique question
 # ✅ Function to clean answers (Removes any conclusion, benefits, or summary-like statements)
 def clean_answer(answer):
     """Removes conclusion-like statements, benefits, and outcome-driven phrases from the response."""
-    # Patterns to detect and remove conclusions, benefit statements, and indirect summaries
     patterns = [
-        r'\b(Overall,|In conclusion,|Conclusion:|To summarize,|Thus,|Therefore,|Finally,|This enables|This ensures|This allows|This provides|This results in|By leveraging|By implementing).*',  # Generic conclusions & enablers
-        r'.*\b(enhancing|improving|achieving|helping to ensure|complying with|ensuring).*security posture.*',  # Compliance & security posture statements
-        r'.*\b(this leads to|this results in|which results in|thereby improving|thus ensuring).*',  # Outcome-driven statements
-        r'\b(By using|By adopting|By deploying|By integrating|By utilizing).*',  # "By doing X, you get Y" structures
-        r'\b(This approach|This strategy|This technology).*',  # Indirect conclusions
+        r'\b(Overall,|In conclusion,|Conclusion:|To summarize,|Thus,|Therefore,|Finally,|This enables|This ensures|This allows|This provides|This results in|By leveraging|By implementing).*',
+        r'.*\b(enhancing|improving|achieving|helping to ensure|complying with|ensuring).*security posture.*',
+        r'.*\b(this leads to|this results in|which results in|thereby improving|thus ensuring).*',
+        r'\b(By using|By adopting|By deploying|By integrating|By utilizing).*',
+        r'\b(This approach|This strategy|This technology).*',
     ]
     
     for pattern in patterns:
@@ -102,32 +101,7 @@ def clean_answer(answer):
 
 # **Submit Button Logic**
 if st.button("Submit"):
-    if optional_question:
-        prompt = (
-            f"You are an expert in Skyhigh Security products, providing highly detailed technical responses for an RFP. "
-            f"Your answer should be **strictly technical**, focusing on architecture, specifications, security features, compliance, integrations, and standards. "
-            f"Your response should be tailored to the specific needs of **{customer_name}** and their security requirements. "
-            f"**DO NOT** include disclaimers, introductions, or any mention of knowledge limitations. "
-            f"**DO NOT** include conclusions, summaries, benefits, security posture improvements, business impacts, or closing remarks. "
-            f"**Only provide the answer in a direct, structured format without any inferred benefits or conclusions.**\n\n"
-            f"Customer: {customer_name}\n"
-            f"Product: {product_choice}\n"
-            f"### Question:\n{optional_question}\n\n"
-            f"### Direct Answer (no intro, no conclusions, no benefits, purely technical, customer-specific):"
-        )
-
-        response = openai.ChatCompletion.create(
-            model=selected_model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=800,
-            temperature=0.1
-        )
-
-        answer = clean_answer(response.choices[0].message.content.strip())  # ✅ Strongest cleaning applied
-        st.markdown(f"### Your Question: {optional_question}")
-        st.write(answer)
-
-    elif customer_name and uploaded_file and column_location:
+    if customer_name and uploaded_file and column_location:
         try:
             # Read file
             if uploaded_file.name.endswith('.csv'):
@@ -166,15 +140,27 @@ if st.button("Submit"):
                     temperature=0.1
                 )
 
-                answer = clean_answer(response.choices[0].message.content.strip())  # ✅ Cleans any remaining conclusions
+                answer = clean_answer(response.choices[0].message.content.strip())
                 answers.append(answer)
 
-                st.markdown(f"### Q{idx}: {question}")
-                st.write(answer)
+            # ✅ Ensure answers are properly inserted
+            if answer_index is not None:
+                df.iloc[:len(answers), answer_index] = answers
+
+                output = BytesIO()
+                with pd.ExcelWriter(output, engine="openpyxl") as writer:
+                    df.to_excel(writer, index=False)
+
+                output.seek(0)
+
+                # ✅ Provide download button
+                st.download_button(
+                    label="📥 Download File with Answers",
+                    data=output,
+                    file_name=f"{customer_name}_RFP_responses.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
 
         except Exception as e:
             st.error(f"Error processing file: {e}")
-
-    else:
-        st.error("Please fill in all mandatory fields and upload a file or enter an optional question.")
 
