@@ -104,7 +104,8 @@ def clean_answer(answer):
 # ✅ JavaScript function for copying text (prevents full page refresh)
 copy_script = """
 <script>
-function copyToClipboard(text) {
+function copyToClipboard(answerId) {
+    var text = document.getElementById(answerId).innerText;
     navigator.clipboard.writeText(text).then(function() {
         alert("Copied to clipboard!");
     }, function(err) {
@@ -160,13 +161,16 @@ if st.button("Submit"):
                 answer = clean_answer(response.choices[0].message.content.strip())
                 answers.append(answer)
 
-                # ✅ Show each answer immediately
+                # ✅ Show each answer once
                 st.markdown(f"### Q{idx}: {question}")
                 st.code(answer, language="markdown")
 
-                # ✅ Fixing Copy button placement
+                # ✅ Fix Copy button placement and apply per-answer copying
+                answer_id = f"answer_{idx}"
+                st.markdown(f'<div id="{answer_id}" style="display: none;">{answer}</div>', unsafe_allow_html=True)
+
                 copy_button_html = f"""
-                <button style="margin-top: 5px;" onclick="copyToClipboard(`{answer}`)">📋 Copy</button>
+                <button style="margin-top: 5px;" onclick="copyToClipboard('{answer_id}')">📋 Copy</button>
                 """
                 st.markdown(copy_button_html, unsafe_allow_html=True)
 
@@ -189,4 +193,3 @@ if st.button("Submit"):
 
         except Exception as e:
             st.error(f"Error processing file: {e}")
-
