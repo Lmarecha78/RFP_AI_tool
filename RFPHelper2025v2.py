@@ -86,10 +86,8 @@ optional_question = st.text_input("Extra/Optional: You can ask a unique question
 # ✅ Function to clean answers (Removes any conclusion, benefits, markdown formatting)
 def clean_answer(answer):
     """Removes unwanted formatting and conclusion-like statements."""
-    # Remove markdown bold (`**`)
-    answer = re.sub(r'\*\*(.*?)\*\*', r'\1', answer)
+    answer = re.sub(r'\*\*(.*?)\*\*', r'\1', answer)  # Remove markdown bold (`**`)
 
-    # Patterns to detect and remove conclusions, benefit statements, and indirect summaries
     patterns = [
         r'\b(Overall,|In conclusion,|Conclusion:|To summarize,|Thus,|Therefore,|Finally,|This enables|This ensures|This allows|This provides|This results in|By leveraging|By implementing).*',
         r'.*\b(enhancing|improving|achieving|helping to ensure|complying with|ensuring).*security posture.*',
@@ -149,10 +147,21 @@ if st.button("Submit"):
 
                 # ✅ Show each answer immediately
                 st.markdown(f"**Q{idx}: {question}**")
-                answer_container = st.text_area(label=f"Answer {idx}", value=answer, height=100, key=f"answer_{idx}")
+                st.text_area(label=f"Answer {idx}", value=answer, height=100, key=f"answer_{idx}")
 
-                # ✅ Copy button next to each answer
-                st.button(f"📋 Copy", key=f"copy_{idx}", on_click=lambda text=answer: st.session_state.update({'clipboard': text}))
+                # ✅ JavaScript Copy Button (prevents page reset)
+                copy_script = f"""
+                <script>
+                function copyToClipboard{text_id}() {{
+                    var text = document.getElementById("{text_id}").value;
+                    navigator.clipboard.writeText(text);
+                    alert("Copied!");
+                }}
+                </script>
+                <textarea id="{text_id}" style="display:none;">{answer}</textarea>
+                <button onclick="copyToClipboard{text_id}()">📋 Copy</button>
+                """
+                st.markdown(copy_script, unsafe_allow_html=True)
 
             # ✅ Provide Download Link After All Answers Are Displayed
             if answer_index is not None:
