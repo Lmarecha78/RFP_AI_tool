@@ -80,7 +80,7 @@ def set_background(image_url):
 set_background("https://raw.githubusercontent.com/lmarecha78/RFP_AI_tool/main/skyhigh_bg.png")
 
 # User inputs
-customer_name = st.text_input("Customer Name")
+customer_name = st.text_input("Customer Name", key="customer_name")
 product_choice = st.selectbox(
     "What is the elected product?",
     [
@@ -89,11 +89,12 @@ product_choice = st.selectbox(
         "Skyhigh Security GAM ICAP",
         "Skyhigh Security CASB",
         "Skyhigh Security Cloud Proxy"
-    ]
+    ],
+    key="product_choice"
 )
 
-language_choice = st.selectbox("Select language", ["English", "French", "Spanish", "German", "Italian"])
-uploaded_file = st.file_uploader("Upload a CSV or XLS file", type=["csv", "xls", "xlsx"])
+language_choice = st.selectbox("Select language", ["English", "French", "Spanish", "German", "Italian"], key="language_choice")
+uploaded_file = st.file_uploader("Upload a CSV or XLS file", type=["csv", "xls", "xlsx"], key="uploaded_file")
 
 # Model selection
 st.markdown("#### **Select Model for Answer Generation**")
@@ -103,7 +104,8 @@ model_choice = st.radio(
     captions=[
         "Recommended option for most technical RFPs/RFIs.",
         "Optimized for Due Diligence and security-related questionnaires."
-    ]
+    ],
+    key="model_choice"
 )
 
 # Model mapping
@@ -113,9 +115,15 @@ model_mapping = {
 }
 selected_model = model_mapping[model_choice]
 
-column_location = st.text_input("Specify the location of the questions (e.g., B for column B)")
-answer_column = st.text_input("Optional: Specify the column for answers (e.g., C for column C)")
-optional_question = st.text_input("Extra/Optional: You can ask a unique question here")
+column_location = st.text_input("Specify the location of the questions (e.g., B for column B)", key="column_location")
+answer_column = st.text_input("Optional: Specify the column for answers (e.g., C for column C)", key="answer_column")
+optional_question = st.text_input("Extra/Optional: You can ask a unique question here", key="optional_question")
+
+# Debugging: Show input values
+st.write(f"**Debugging Info:**")
+st.write(f"Uploaded file: {uploaded_file}")
+st.write(f"Customer Name: {customer_name}")
+st.write(f"Column Location: {column_location}")
 
 # Function to clean responses
 def clean_answer(answer):
@@ -123,6 +131,19 @@ def clean_answer(answer):
 
 # Submit button
 if st.button("Submit"):
+    # ✅ Mandatory Field Checks
+    if not customer_name:
+        st.error("❌ Please enter a customer name.")
+        st.stop()
+    
+    if not column_location:
+        st.error("❌ Please specify the location of the questions (e.g., B for column B).")
+        st.stop()
+
+    if not uploaded_file and not optional_question:
+        st.error("❌ Please upload a file or enter an optional question.")
+        st.stop()
+
     if optional_question:
         prompt = (
             f"You are an expert in Skyhigh Security products, providing highly detailed technical responses for an RFP. "
@@ -155,3 +176,4 @@ if st.button("Submit"):
 
     else:
         st.error("Please fill in all mandatory fields and upload a file or enter an optional question.")
+
