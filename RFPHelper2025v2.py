@@ -83,9 +83,13 @@ column_location = st.text_input("Specify the location of the questions (e.g., B 
 answer_column = st.text_input("Optional: Specify the column for answers (e.g., C for column C)")
 optional_question = st.text_input("Extra/Optional: You can ask a unique question here")
 
-# ✅ Function to clean answers (Removes any conclusion, benefits, or summary-like statements)
+# ✅ Function to clean answers (Removes any conclusion, benefits, markdown formatting)
 def clean_answer(answer):
-    """Removes conclusion-like statements, benefits, and outcome-driven phrases from the response."""
+    """Removes unwanted formatting and conclusion-like statements."""
+    # Remove markdown bold (`**`)
+    answer = re.sub(r'\*\*(.*?)\*\*', r'\1', answer)
+
+    # Patterns to detect and remove conclusions, benefit statements, and indirect summaries
     patterns = [
         r'\b(Overall,|In conclusion,|Conclusion:|To summarize,|Thus,|Therefore,|Finally,|This enables|This ensures|This allows|This provides|This results in|By leveraging|By implementing).*',
         r'.*\b(enhancing|improving|achieving|helping to ensure|complying with|ensuring).*security posture.*',
@@ -124,10 +128,10 @@ if st.button("Submit"):
             answers = []
             for idx, question in enumerate(questions, 1):
                 prompt = (
-                    f"You are an expert in Skyhigh Security products, responding to an RFP for **{customer_name}**. "
+                    f"You are an expert in Skyhigh Security products, responding to an RFP for {customer_name}. "
                     f"Provide a detailed, precise, and technical response sourced explicitly from official Skyhigh Security documentation. "
-                    f"Ensure the response aligns with the security priorities and infrastructure of **{customer_name}**. "
-                    f"**Do NOT include introductions, disclaimers, conclusions, or benefits.**\n\n"
+                    f"Ensure the response aligns with the security priorities and infrastructure of {customer_name}. "
+                    f"Do NOT include introductions, disclaimers, conclusions, or benefits.\n\n"
                     f"Product: {product_choice}\n"
                     f"### Question:\n{question}\n\n"
                     f"### Direct Technical Answer (tailored for {customer_name}):"
@@ -143,7 +147,14 @@ if st.button("Submit"):
                 answer = clean_answer(response.choices[0].message.content.strip())
                 answers.append(answer)
 
-            # ✅ Ensure answers are properly inserted
+                # ✅ Show each answer immediately
+                st.markdown(f"**Q{idx}: {question}**")
+                answer_container = st.text_area(label=f"Answer {idx}", value=answer, height=100, key=f"answer_{idx}")
+
+                # ✅ Copy button next to each answer
+                st.button(f"📋 Copy", key=f"copy_{idx}", on_click=lambda text=answer: st.session_state.update({'clipboard': text}))
+
+            # ✅ Provide Download Link After All Answers Are Displayed
             if answer_index is not None:
                 df.iloc[:len(answers), answer_index] = answers
 
@@ -153,7 +164,6 @@ if st.button("Submit"):
 
                 output.seek(0)
 
-                # ✅ Provide download button
                 st.download_button(
                     label="📥 Download File with Answers",
                     data=output,
