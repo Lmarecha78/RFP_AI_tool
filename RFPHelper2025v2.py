@@ -83,10 +83,20 @@ column_location = st.text_input("Specify the location of the questions (e.g., B 
 answer_column = st.text_input("Optional: Specify the column for answers (e.g., C for column C)")
 optional_question = st.text_input("Extra/Optional: You can ask a unique question here")
 
-# ✅ Function to clean answers (Removes any conclusion phrases)
+# ✅ Function to clean answers (Removes any conclusion, benefits, or summary-like statements)
 def clean_answer(answer):
-    """Removes any conclusion phrases from the response."""
-    return re.sub(r'(Overall,.*|In conclusion.*|Conclusion:.*|To summarize.*|Thus,.*|Therefore,.*|Finally,.*)', '', answer, flags=re.IGNORECASE | re.DOTALL).strip()
+    """Removes conclusion-like statements and benefit-driven content."""
+    # Remove common conclusion and benefit phrases
+    patterns = [
+        r'\b(Overall,|In conclusion,|Conclusion:|To summarize,|Thus,|Therefore,|Finally,|This enables|By deploying|This allows|This ensures).*',  # Generic conclusions
+        r'.*\b(enhancing|improving|achieving|helping to ensure|complying with|ensuring).*security posture.*',  # Compliance & posture statements
+        r'.*\b(this leads to|this results in|which results in|thereby improving|thus ensuring).*',  # Outcome statements
+    ]
+    
+    for pattern in patterns:
+        answer = re.sub(pattern, '', answer, flags=re.IGNORECASE | re.DOTALL).strip()
+
+    return answer
 
 # **Submit Button Logic**
 if st.button("Submit"):
@@ -96,12 +106,12 @@ if st.button("Submit"):
             f"Your answer should be **strictly technical**, focusing on architecture, specifications, security features, compliance, integrations, and standards. "
             f"Your response should be tailored to the specific needs of **{customer_name}** and their security requirements. "
             f"**DO NOT** include disclaimers, introductions, or any mention of knowledge limitations. "
-            f"**DO NOT** include conclusions, summaries, or closing remarks. "
+            f"**DO NOT** include conclusions, summaries, benefits, security posture improvements, or closing remarks. "
             f"**Only provide the answer in a direct and structured format.**\n\n"
             f"Customer: {customer_name}\n"
             f"Product: {product_choice}\n"
             f"### Question:\n{optional_question}\n\n"
-            f"### Direct Answer (no intro, no conclusions, purely technical, customer-specific):"
+            f"### Direct Answer (no intro, no conclusions, no benefits, purely technical, customer-specific):"
         )
 
         response = openai.ChatCompletion.create(
@@ -111,7 +121,7 @@ if st.button("Submit"):
             temperature=0.1
         )
 
-        answer = clean_answer(response.choices[0].message.content.strip())  # ✅ Cleans any remaining conclusions
+        answer = clean_answer(response.choices[0].message.content.strip())  # ✅ Stronger cleaning
         st.markdown(f"### Your Question: {optional_question}")
         st.write(answer)
 
@@ -141,7 +151,7 @@ if st.button("Submit"):
                     f"You are an expert in Skyhigh Security products, responding to an RFP for **{customer_name}**. "
                     f"Provide a detailed, precise, and technical response sourced explicitly from official Skyhigh Security documentation. "
                     f"Ensure the response aligns with the security priorities and infrastructure of **{customer_name}**. "
-                    f"**Do NOT include introductions, disclaimers, or conclusions.**\n\n"
+                    f"**Do NOT include introductions, disclaimers, conclusions, or benefits.**\n\n"
                     f"Product: {product_choice}\n"
                     f"### Question:\n{question}\n\n"
                     f"### Direct Technical Answer (tailored for {customer_name}):"
@@ -180,4 +190,3 @@ if st.button("Submit"):
 
     else:
         st.error("Please fill in all mandatory fields and upload a file or enter an optional question.")
-
