@@ -131,6 +131,10 @@ if st.button("Submit"):
             question_index = ord(column_location.strip().upper()) - ord('A')
             questions = df.iloc[:, question_index].dropna().tolist()
 
+            if not questions:
+                st.warning("⚠ No valid questions found in the selected column. Please verify your file format and column selection.")
+                st.stop()
+
             answer_index = None
             if answer_column:
                 answer_index = ord(answer_column.strip().upper()) - ord('A')
@@ -159,20 +163,21 @@ if st.button("Submit"):
                 )
 
                 answer = clean_answer(response.choices[0].message.content.strip())
+
+                if not answer or "I don't know" in answer or "as an AI" in answer:
+                    answer = "⚠ No specific answer was found for this question. Ensure the question is clearly defined and related to Skyhigh Security."
+
                 answers.append(answer)
 
-                # ✅ Show each answer once
-                st.markdown(f"### Q{idx}: {question}")
-                st.code(answer, language="markdown")
-
-                # ✅ Fix Copy button placement and apply per-answer copying
-                answer_id = f"answer_{idx}"
-                st.markdown(f'<div id="{answer_id}" style="display: none;">{answer}</div>', unsafe_allow_html=True)
-
-                copy_button_html = f"""
-                <button style="margin-top: 5px;" onclick="copyToClipboard('{answer_id}')">📋 Copy</button>
-                """
-                st.markdown(copy_button_html, unsafe_allow_html=True)
+                # ✅ Improved UI Layout for Answers
+                st.markdown(f"""
+                    <div style="background-color: #1E1E1E; padding: 15px; border-radius: 10px; box-shadow: 2px 2px 5px rgba(255, 255, 255, 0.1);">
+                        <h4 style="color: #F5A623;">Q{idx}: {question}</h4>
+                        <pre style="color: #FFFFFF; white-space: pre-wrap;">{answer}</pre>
+                        <button style="background-color: #F5A623; color: #000000; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;"
+                        onclick="copyToClipboard('answer_{idx}')">📋 Copy</button>
+                    </div><br>
+                """, unsafe_allow_html=True)
 
             # ✅ Provide Download Link After All Answers Are Displayed
             if answer_index is not None:
