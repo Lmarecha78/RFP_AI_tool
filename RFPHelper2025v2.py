@@ -147,13 +147,14 @@ if st.button("Submit"):
 
                 # ✅ Show each answer immediately
                 st.markdown(f"**Q{idx}: {question}**")
-                st.text_area(label=f"Answer {idx}", value=answer, height=100, key=f"answer_{idx}")
+                answer_container = st.code(answer, language="markdown")
 
-                # ✅ JavaScript Copy Button (prevents page reset)
+                # ✅ JavaScript Copy Button Fix (text_id properly defined)
+                text_id = f"textarea_{idx}"
                 copy_script = f"""
                 <script>
                 function copyToClipboard{text_id}() {{
-                    var text = document.getElementById("{text_id}").value;
+                    var text = document.getElementById("{text_id}").textContent;
                     navigator.clipboard.writeText(text);
                     alert("Copied!");
                 }}
@@ -182,4 +183,3 @@ if st.button("Submit"):
 
         except Exception as e:
             st.error(f"Error processing file: {e}")
-
