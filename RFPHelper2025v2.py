@@ -12,10 +12,9 @@ st.set_page_config(
     layout="wide"
 )
 
-# ✅ Define authentication credentials
-PASSWORD = "Skyhigh@2025!"  # 🔐 Change this to your secure password
+# ✅ Authentication
+PASSWORD = "Skyhigh@2025!"
 
-# ✅ Function for authentication
 def authenticate():
     """Check user authentication and store the result in session state."""
     if "authenticated" not in st.session_state:
@@ -24,28 +23,24 @@ def authenticate():
     if not st.session_state.authenticated:
         st.title("🔒 Skyhigh Security RFP Tool")
         st.subheader("Enter Password to Access")
-
-        # Create a password input field
         password_input = st.text_input("Password", type="password")
 
         if st.button("Login"):
             if password_input == PASSWORD:
                 st.session_state.authenticated = True
                 st.success("✅ Authentication successful! Access granted.")
-                st.rerun()  # ✅ Correct in Streamlit 1.18+
+                st.rerun()
             else:
                 st.error("❌ Incorrect password. Try again.")
 
-        # Stop execution if authentication fails
         st.stop()
 
-# ✅ Call authentication function
 authenticate()
 
-# 🎉 If authenticated, show the main app
+# 🎉 Main App
 st.title("Skyhigh Security - RFI/RFP AI Tool")
 
-# Retrieve OpenAI API key securely from Streamlit Secrets
+# ✅ OpenAI API key
 openai_api_key = st.secrets.get("OPENAI_API_KEY")
 
 if not openai_api_key:
@@ -59,10 +54,10 @@ try:
     new_api = True
 except ImportError:
     openai.api_key = openai_api_key
-    openai_client = openai  # Assign module for older versions
+    openai_client = openai
     new_api = False
 
-# Background image
+# Background Image
 def set_background(image_url):
     css = f"""
     <style>
@@ -79,24 +74,19 @@ def set_background(image_url):
 
 set_background("https://raw.githubusercontent.com/lmarecha78/RFP_AI_tool/main/skyhigh_bg.png")
 
-# User inputs
+# User Inputs
 customer_name = st.text_input("Customer Name", key="customer_name")
 product_choice = st.selectbox(
     "What is the elected product?",
-    [
-        "Skyhigh Security SSE",
-        "Skyhigh Security On-Premise Proxy",
-        "Skyhigh Security GAM ICAP",
-        "Skyhigh Security CASB",
-        "Skyhigh Security Cloud Proxy"
-    ],
+    ["Skyhigh Security SSE", "Skyhigh Security On-Premise Proxy", "Skyhigh Security GAM ICAP",
+     "Skyhigh Security CASB", "Skyhigh Security Cloud Proxy"],
     key="product_choice"
 )
 
 language_choice = st.selectbox("Select language", ["English", "French", "Spanish", "German", "Italian"], key="language_choice")
 uploaded_file = st.file_uploader("Upload a CSV or XLS file", type=["csv", "xls", "xlsx"], key="uploaded_file")
 
-# Model selection
+# Model Selection
 st.markdown("#### **Select Model for Answer Generation**")
 model_choice = st.radio(
     "Choose a model:",
@@ -108,7 +98,7 @@ model_choice = st.radio(
     key="model_choice"
 )
 
-# Model mapping
+# Model Mapping
 model_mapping = {
     "GPT-4.0": "gpt-4-turbo",
     "Due Diligence (Fine-Tuned)": "ft:gpt-4o-2024-08-06:personal:skyhigh-due-diligence:BClhZf1W"
@@ -119,14 +109,10 @@ column_location = st.text_input("Specify the location of the questions (e.g., B 
 answer_column = st.text_input("Optional: Specify the column for answers (e.g., C for column C)", key="answer_column")
 optional_question = st.text_input("Extra/Optional: You can ask a unique question here", key="optional_question")
 
-# ✅ Check if a valid file is uploaded
-if uploaded_file is None and not optional_question:
-    st.error("❌ Please upload a file or enter an optional question.")
-    st.stop()
-
-# ✅ Try reading the file to ensure it is valid
-try:
-    if uploaded_file is not None:
+# ✅ File Processing
+df = None
+if uploaded_file:
+    try:
         file_extension = uploaded_file.name.split(".")[-1].lower()
         
         if file_extension == "csv":
@@ -139,35 +125,31 @@ try:
         
         st.success("✅ File uploaded and successfully read!")
 
-except Exception as e:
-    st.error(f"❌ Error reading the uploaded file: {e}")
+    except Exception as e:
+        st.error(f"❌ Error reading the uploaded file: {e}")
+        st.stop()
+
+# ✅ Validation
+if not customer_name:
+    st.error("❌ Please enter a customer name.")
     st.stop()
 
-# Debugging: Show input values
-st.write(f"**Debugging Info:**")
+if not column_location:
+    st.error("❌ Please specify the location of the questions (e.g., B for column B).")
+    st.stop()
+
+if df is None and not optional_question:
+    st.error("❌ Please upload a file or enter an optional question.")
+    st.stop()
+
+# Debugging Output
+st.write("### Debugging Info:")
 st.write(f"Uploaded file: {uploaded_file}")
 st.write(f"Customer Name: {customer_name}")
 st.write(f"Column Location: {column_location}")
 
-# Function to clean responses
-def clean_answer(answer):
-    return re.sub(r'(Overall,.*|In conclusion.*|Conclusion:.*)', '', answer, flags=re.IGNORECASE | re.DOTALL).strip()
-
-# Submit button
+# Submit Button
 if st.button("Submit"):
-    # ✅ Mandatory Field Checks
-    if not customer_name:
-        st.error("❌ Please enter a customer name.")
-        st.stop()
-    
-    if not column_location:
-        st.error("❌ Please specify the location of the questions (e.g., B for column B).")
-        st.stop()
-
-    if uploaded_file is None and not optional_question:
-        st.error("❌ Please upload a file or enter an optional question.")
-        st.stop()
-
     if optional_question:
         prompt = (
             f"You are an expert in Skyhigh Security products, providing highly detailed technical responses for an RFP. "
@@ -194,11 +176,11 @@ if st.button("Submit"):
                 temperature=0.1
             )
 
-        answer = clean_answer(response.choices[0].message.content.strip())
         st.markdown(f"### Your Question: {optional_question}")
-        st.write(answer)
+        st.write(response.choices[0].message.content.strip())
 
     else:
         st.error("Please fill in all mandatory fields and upload a file or enter an optional question.")
+
 
 
