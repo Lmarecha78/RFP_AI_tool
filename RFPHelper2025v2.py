@@ -119,6 +119,30 @@ column_location = st.text_input("Specify the location of the questions (e.g., B 
 answer_column = st.text_input("Optional: Specify the column for answers (e.g., C for column C)", key="answer_column")
 optional_question = st.text_input("Extra/Optional: You can ask a unique question here", key="optional_question")
 
+# ✅ Check if a valid file is uploaded
+if uploaded_file is None and not optional_question:
+    st.error("❌ Please upload a file or enter an optional question.")
+    st.stop()
+
+# ✅ Try reading the file to ensure it is valid
+try:
+    if uploaded_file is not None:
+        file_extension = uploaded_file.name.split(".")[-1].lower()
+        
+        if file_extension == "csv":
+            df = pd.read_csv(uploaded_file)
+        elif file_extension in ["xls", "xlsx"]:
+            df = pd.read_excel(uploaded_file)
+        else:
+            st.error("❌ Unsupported file type! Please upload a CSV or Excel file.")
+            st.stop()
+        
+        st.success("✅ File uploaded and successfully read!")
+
+except Exception as e:
+    st.error(f"❌ Error reading the uploaded file: {e}")
+    st.stop()
+
 # Debugging: Show input values
 st.write(f"**Debugging Info:**")
 st.write(f"Uploaded file: {uploaded_file}")
