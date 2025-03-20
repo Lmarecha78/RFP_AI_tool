@@ -109,28 +109,34 @@ column_location = st.text_input("Specify the location of the questions (e.g., B 
 answer_column = st.text_input("Optional: Specify the column for answers (e.g., C for column C)", key="answer_column")
 optional_question = st.text_input("Extra/Optional: You can ask a unique question here", key="optional_question")
 
-# ✅ Store uploaded file in session state
+# ✅ File Persistence in Session State
 if uploaded_file:
-    st.session_state.uploaded_file = uploaded_file  # Store file for persistence
     try:
+        file_bytes = uploaded_file.getvalue()  # Read file as bytes
+        st.session_state.uploaded_file_data = file_bytes  # Store file in session_state
+        st.session_state.uploaded_file_name = uploaded_file.name  # Store file name
+
         file_extension = uploaded_file.name.split(".")[-1].lower()
+
+        # Reload file from stored bytes
+        file_obj = BytesIO(st.session_state.uploaded_file_data)
         
         if file_extension == "csv":
-            st.session_state.df = pd.read_csv(uploaded_file)
+            st.session_state.df = pd.read_csv(file_obj)
         elif file_extension in ["xls", "xlsx"]:
-            st.session_state.df = pd.read_excel(uploaded_file)
+            st.session_state.df = pd.read_excel(file_obj)
         else:
             st.error("❌ Unsupported file type! Please upload a CSV or Excel file.")
             st.stop()
         
-        st.success("✅ File uploaded and successfully read!")
+        st.success(f"✅ File '{st.session_state.uploaded_file_name}' uploaded and successfully read!")
 
     except Exception as e:
         st.error(f"❌ Error reading the uploaded file: {e}")
         st.stop()
 
-# ✅ Validation Fix: Ensure file persists
-df = st.session_state.get("df", None)
+# ✅ Improved Validation
+df = st.session_state.get("df", None)  # Ensure DataFrame persists
 
 if not customer_name:
     st.error("❌ Please enter a customer name.")
