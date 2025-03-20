@@ -12,14 +12,13 @@ st.set_page_config(
     layout="wide"
 )
 
-# Retrieve OpenAI API key securely from Streamlit Secrets
-openai_api_key = st.secrets["OPENAI_API_KEY"]
+# ✅ Ensure OpenAI API key is set correctly
+openai_api_key = st.secrets.get("OPENAI_API_KEY")
 
 if not openai_api_key:
     st.error("❌ OpenAI API key is missing! Please set it in Streamlit Cloud 'Secrets'.")
 else:
-    from openai import OpenAI  # Ensure correct import
-openai_client = OpenAI(api_key=openai_api_key)
+    openai.api_key = openai_api_key  # ✅ Correct way to set API key
 
 # Set background image
 def set_background(image_url):
@@ -101,7 +100,7 @@ if st.button("Submit"):
             f"### Direct Answer (no intro, purely technical):"
         )
 
-        response = openai_client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model=selected_model,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=800,
@@ -143,7 +142,7 @@ if st.button("Submit"):
                     f"### Direct Technical Answer:"
                 )
 
-                response = openai_client.chat.completions.create(
+                response = openai.ChatCompletion.create(
                     model=selected_model,
                     messages=[{"role": "user", "content": prompt}],
                     max_tokens=800,
@@ -176,4 +175,3 @@ if st.button("Submit"):
 
     else:
         st.error("Please fill in all mandatory fields and upload a file or enter an optional question.")
-
