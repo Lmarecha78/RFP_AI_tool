@@ -101,6 +101,21 @@ def clean_answer(answer):
 
     return answer
 
+# ✅ JavaScript function for copying text (prevents full page refresh)
+copy_script = """
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        alert("Copied to clipboard!");
+    }, function(err) {
+        console.error("Error copying text: ", err);
+    });
+}
+</script>
+"""
+
+st.markdown(copy_script, unsafe_allow_html=True)  # Inject JavaScript at the top
+
 # **Submit Button Logic**
 if st.button("Submit"):
     if customer_name and uploaded_file and column_location:
@@ -146,23 +161,14 @@ if st.button("Submit"):
                 answers.append(answer)
 
                 # ✅ Show each answer immediately
-                st.markdown(f"**Q{idx}: {question}**")
-                answer_container = st.code(answer, language="markdown")
+                st.markdown(f"### Q{idx}: {question}")
+                st.code(answer, language="markdown")
 
-                # ✅ JavaScript Copy Button Fix (text_id properly defined)
-                text_id = f"textarea_{idx}"
-                copy_script = f"""
-                <script>
-                function copyToClipboard{text_id}() {{
-                    var text = document.getElementById("{text_id}").textContent;
-                    navigator.clipboard.writeText(text);
-                    alert("Copied!");
-                }}
-                </script>
-                <textarea id="{text_id}" style="display:none;">{answer}</textarea>
-                <button onclick="copyToClipboard{text_id}()">📋 Copy</button>
+                # ✅ Add working Copy button without page refresh
+                copy_button_html = f"""
+                <button onclick="copyToClipboard(`{answer}`)">📋 Copy</button>
                 """
-                st.markdown(copy_script, unsafe_allow_html=True)
+                st.markdown(copy_button_html, unsafe_allow_html=True)
 
             # ✅ Provide Download Link After All Answers Are Displayed
             if answer_index is not None:
