@@ -18,7 +18,8 @@ openai_api_key = st.secrets["OPENAI_API_KEY"]
 if not openai_api_key:
     st.error("❌ OpenAI API key is missing! Please set it in Streamlit Cloud 'Secrets'.")
 else:
-    openai_client = openai.OpenAI(api_key=openai_api_key)  # New API Client
+    from openai import OpenAI  # Ensure correct import
+openai_client = OpenAI(api_key=openai_api_key)
 
 # Set background image
 def set_background(image_url):
