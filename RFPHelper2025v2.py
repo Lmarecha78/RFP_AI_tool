@@ -348,7 +348,7 @@ customer_name = st.text_input(
 )
 
 uploaded_file = st.file_uploader(
-    "Upload a CSV or XLS file - Note: Only XLS files with a single worksheet are supported.",
+    "Upload a CSV or XLS file - Please note that only XLS files containing a single worksheet are supported.",
     type=["csv", "xls", "xlsx"],
     key=f"uploaded_file_{st.session_state.ui_version}",
     disabled=disable_multi
