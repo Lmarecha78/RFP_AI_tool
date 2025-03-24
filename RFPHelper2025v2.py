@@ -150,7 +150,6 @@ if st.button("Submit", key=f"submit_button_{st.session_state.ui_version}"):
         prompt = (
             "You are an expert in Skyhigh Security products, providing highly detailed technical responses for an RFP. "
             "Your answer should be strictly technical, sourced exclusively from official Skyhigh Security documentation. "
-            "Focus on architecture, specifications, security features, compliance, integrations, and standards. "
             "Do NOT include disclaimers or mention knowledge limitations. Only provide the direct answer.\n\n"
             f"Customer: {customer_name}\n"
             f"Product: {selected_model}\n"
