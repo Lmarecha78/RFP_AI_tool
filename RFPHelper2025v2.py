@@ -33,34 +33,43 @@ def set_background(image_url):
 set_background("https://raw.githubusercontent.com/lmarecha78/RFP_AI_tool/main/skyhigh_bg.png")
 
 ###############################################################################
-# 3) PASSWORD CHECK WITH META REFRESH
+# 3) CHECK QUERY PARAM FOR AUTH
 ###############################################################################
-if "password_authenticated" not in st.session_state:
-    st.session_state.password_authenticated = False
+# We define a "magic token" in secrets. For example, in your Streamlit secrets:
+# [app_tokens]
+# password = "YourPassword"
+# token = "someRandomString"
+#
+# Or you can store just a hashed token if you like.
 
-if not st.session_state.password_authenticated:
+params = st.experimental_get_query_params()
+IS_AUTHED = (params.get("auth", [""])[0] == st.secrets["app_tokens"]["token"])
+
+###############################################################################
+# 4) IF NOT AUTHED, SHOW PASSWORD PROMPT
+###############################################################################
+if not IS_AUTHED:
     st.title("Enter Password to Access the App")
+
     pwd = st.text_input("Password", type="password")
-
     if st.button("Submit Password"):
-        if pwd == st.secrets["app_password"]:
-            # Mark authenticated
-            st.session_state.password_authenticated = True
+        # Compare typed password to secrets
+        if pwd == st.secrets["app_tokens"]["password"]:
+            # If correct, set the token in the URL and force immediate refresh
+            st.experimental_set_query_params(auth=st.secrets["app_tokens"]["token"])
 
-            # Force immediate page refresh using a meta refresh
+            # Insert meta refresh to reload immediately
             st.success("Password correct! Loading main page...")
-            st.markdown("""
-                <meta http-equiv="refresh" content="0">
-            """, unsafe_allow_html=True)
+            st.markdown("""<meta http-equiv="refresh" content="0">""", unsafe_allow_html=True)
             st.stop()
         else:
             st.error("Incorrect password. Please try again.")
 
-    # If still not authenticated, stop so main page won't show
+    # Stop so the main page won't appear below
     st.stop()
 
 ###############################################################################
-# 4) MAIN APP (only runs if password_authenticated == True)
+# 5) MAIN APP (only runs if we see the correct ?auth=token in the URL)
 ###############################################################################
 st.title("Skyhigh Security - RFI/RFP AI Tool")
 
@@ -147,7 +156,6 @@ if st.button("Submit", key=f"submit_button_{st.session_state.ui_version}"):
 
     st.success(f"Processing {len(questions)} question(s)...")
 
-    import openai
     for idx, question in enumerate(questions, 1):
         prompt = (
             "You are an expert in Skyhigh Security products, providing highly detailed technical responses for an RFP. "
@@ -183,5 +191,6 @@ if st.button("Submit", key=f"submit_button_{st.session_state.ui_version}"):
         df.to_excel(output, index=False, engine="openpyxl")
         output.seek(0)
         st.download_button("📥 Download Responses", data=output, file_name="RFP_Responses.xlsx")
+
 
 
