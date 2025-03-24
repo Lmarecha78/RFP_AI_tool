@@ -35,15 +35,21 @@ set_background("https://raw.githubusercontent.com/lmarecha78/RFP_AI_tool/main/sk
 ###############################################################################
 # 3) CHECK QUERY PARAM FOR AUTH
 ###############################################################################
-# We define a "magic token" in secrets. For example, in your Streamlit secrets:
-# [app_tokens]
-# password = "YourPassword"
-# token = "someRandomString"
-#
-# Or you can store just a hashed token if you like.
+# Replace these function calls with the non-experimental versions if your Streamlit is ≥1.25:
+params = st.experimental_get_query_params()  # or st.get_query_params() if available
 
-params = st.experimental_get_query_params()
-IS_AUTHED = (params.get("auth", [""])[0] == st.secrets["app_tokens"]["token"])
+# We'll read "token" from secrets. Adjust names to match your secrets structure.
+# Example secrets.toml:
+#   [app_tokens]
+#   password = "MySecurePassword"
+#   token = "RandomStringForAuth"
+#
+# If you see KeyError('app_tokens'), you must define that in your secrets.
+
+token_in_url = params.get("auth", [""])[0]
+correct_token = st.secrets["app_tokens"]["token"]  # must exist in your secrets
+
+IS_AUTHED = (token_in_url == correct_token)
 
 ###############################################################################
 # 4) IF NOT AUTHED, SHOW PASSWORD PROMPT
@@ -51,25 +57,27 @@ IS_AUTHED = (params.get("auth", [""])[0] == st.secrets["app_tokens"]["token"])
 if not IS_AUTHED:
     st.title("Enter Password to Access the App")
 
+    # The user-facing password from secrets
+    correct_password = st.secrets["app_tokens"]["password"]
+
     pwd = st.text_input("Password", type="password")
     if st.button("Submit Password"):
-        # Compare typed password to secrets
-        if pwd == st.secrets["app_tokens"]["password"]:
-            # If correct, set the token in the URL and force immediate refresh
-            st.experimental_set_query_params(auth=st.secrets["app_tokens"]["token"])
+        if pwd == correct_password:
+            # Set the token in the URL and force immediate refresh
+            # Replace with st.set_query_params if your version supports it
+            st.experimental_set_query_params(auth=correct_token)
 
-            # Insert meta refresh to reload immediately
             st.success("Password correct! Loading main page...")
+            # Meta refresh to reload immediately
             st.markdown("""<meta http-equiv="refresh" content="0">""", unsafe_allow_html=True)
             st.stop()
         else:
             st.error("Incorrect password. Please try again.")
 
-    # Stop so the main page won't appear below
-    st.stop()
+    st.stop()  # Prevent showing the main page if not authed
 
 ###############################################################################
-# 5) MAIN APP (only runs if we see the correct ?auth=token in the URL)
+# 5) MAIN APP (only runs if ?auth=correct_token)
 ###############################################################################
 st.title("Skyhigh Security - RFI/RFP AI Tool")
 
@@ -191,6 +199,7 @@ if st.button("Submit", key=f"submit_button_{st.session_state.ui_version}"):
         df.to_excel(output, index=False, engine="openpyxl")
         output.seek(0)
         st.download_button("📥 Download Responses", data=output, file_name="RFP_Responses.xlsx")
+
 
 
 
