@@ -33,7 +33,7 @@ def set_background(image_url):
 set_background("https://raw.githubusercontent.com/lmarecha78/RFP_AI_tool/main/skyhigh_bg.png")
 
 ###############################################################################
-# 3) PASSWORD CHECK WITH JS RELOAD
+# 3) PASSWORD CHECK WITH META REFRESH
 ###############################################################################
 if "password_authenticated" not in st.session_state:
     st.session_state.password_authenticated = False
@@ -44,26 +44,20 @@ if not st.session_state.password_authenticated:
 
     if st.button("Submit Password"):
         if pwd == st.secrets["app_password"]:
-            # Mark authenticated in session state
+            # Mark authenticated
             st.session_state.password_authenticated = True
 
-            # Inject a tiny JS script that reloads the page immediately
-            reload_script = """
-            <script>
-            window.location.reload();
-            </script>
-            """
+            # Force immediate page refresh using a meta refresh
             st.success("Password correct! Loading main page...")
-            st.markdown(reload_script, unsafe_allow_html=True)
-
-            # Stop the script so the main app won't render in this run
+            st.markdown("""
+                <meta http-equiv="refresh" content="0">
+            """, unsafe_allow_html=True)
             st.stop()
         else:
             st.error("Incorrect password. Please try again.")
 
-    # If still not authenticated after button press, stop
-    if not st.session_state.password_authenticated:
-        st.stop()
+    # If still not authenticated, stop so main page won't show
+    st.stop()
 
 ###############################################################################
 # 4) MAIN APP (only runs if password_authenticated == True)
@@ -189,4 +183,5 @@ if st.button("Submit", key=f"submit_button_{st.session_state.ui_version}"):
         df.to_excel(output, index=False, engine="openpyxl")
         output.seek(0)
         st.download_button("📥 Download Responses", data=output, file_name="RFP_Responses.xlsx")
+
 
