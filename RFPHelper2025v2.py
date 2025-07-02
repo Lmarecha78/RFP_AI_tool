@@ -153,7 +153,6 @@ if st.button("Submit", key=f"submit_button_{st.session_state.ui_version}"):
             "Focus on architecture, specifications, security features, compliance, integrations, and standards. "
             "Do NOT include disclaimers or mention knowledge limitations. Only provide the direct answer.\n\n"
             f"Customer: {customer_name}\n"
-            f"Product: {selected_model}\n"
             "### Question:\n"
             f"{question}\n\n"
             "### Direct Answer (from official Skyhigh docs):"
