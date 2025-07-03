@@ -30,11 +30,10 @@ def set_background(image_url):
     """
     st.markdown(css, unsafe_allow_html=True)
 
-# Set a custom background if desired
 set_background("https://raw.githubusercontent.com/lmarecha78/RFP_AI_tool/main/skyhigh_bg.png")
 
 ###############################################################################
-# 3) PASSWORD CHECK (two-click approach without st.experimental_rerun)
+# 3) PASSWORD CHECK
 ###############################################################################
 if "password_authenticated" not in st.session_state:
     st.session_state.password_authenticated = False
@@ -43,24 +42,19 @@ if not st.session_state.password_authenticated:
     st.title("Enter Password to Access the App")
     pwd = st.text_input("Password", type="password")
     if st.button("Submit Password"):
-        # Compare typed password to the one stored in Streamlit secrets
         if pwd == st.secrets["app_password"]:
             st.session_state.password_authenticated = True
             st.success("Password correct! Please refresh or click any button to proceed.")
-            # We stop here so the main page won't show in this same run
             st.stop()
         else:
             st.error("Incorrect password. Please try again.")
-
-    # If still not authenticated, stop to avoid showing the main page
     st.stop()
 
 ###############################################################################
-# 4) MAIN APP (only runs if password_authenticated == True at script start)
+# 4) MAIN APP
 ###############################################################################
 st.title("Skyhigh Security - RFI/RFP AI Tool")
 
-# Simple dynamic UI approach
 if "ui_version" not in st.session_state:
     st.session_state.ui_version = 0
 
@@ -69,13 +63,11 @@ def restart_ui():
 
 st.button("🔄 Restart", key=f"restart_button_{st.session_state.ui_version}", on_click=restart_ui)
 
-# Retrieve session state for dynamic UI
 customer_name_val = st.session_state.get(f"customer_name_{st.session_state.ui_version}", "").strip()
 uploaded_file_val = st.session_state.get(f"uploaded_file_{st.session_state.ui_version}", None)
 column_location_val = st.session_state.get(f"column_location_{st.session_state.ui_version}", "").strip()
 unique_question_val = st.session_state.get(f"unique_question_{st.session_state.ui_version}", "").strip()
 
-# Disable logic
 disable_unique = bool(customer_name_val or uploaded_file_val or column_location_val)
 disable_multi = bool(unique_question_val)
 
@@ -107,16 +99,16 @@ unique_question = st.text_input(
 st.markdown("#### **Select Model for Answer Generation**")
 model_choice = st.radio(
     "Choose a model:",
-    options=["GPT-4.0", "Due Diligence (Fine-Tuned)"],
+    options=["GPT-4o (Omni)", "Due Diligence (Fine-Tuned)"],
     captions=[
-        "Recommended for technical RFPs/RFIs.",
-        "Optimized for Due Diligence and security-related questionnaires."
+        "Latest OpenAI model, fastest and most capable.",
+        "Fine-tuned on security questionnaires and due diligence."
     ]
 )
 
 model_mapping = {
-    "GPT-4.0": "gpt-4-turbo",
-    "Due Diligence (Fine-Tuned)": "ft:gpt-4.1-2025-04-14:personal:rfpio2025:BoqgLN6M"
+    "GPT-4o (Omni)": "gpt-4o",
+    "Due Diligence (Fine-Tuned)": "ft:gpt-3.5-turbo-0613:your-org:your-model-id"  # Replace with your model ID
 }
 selected_model = model_mapping[model_choice]
 
@@ -135,6 +127,9 @@ if st.button("Submit", key=f"submit_button_{st.session_state.ui_version}"):
             else:
                 df = pd.read_excel(uploaded_file, engine="openpyxl")
             question_index = ord(column_location.strip().upper()) - ord('A')
+            if question_index >= len(df.columns):
+                st.error(f"Invalid column index '{column_location}'. Your file only has {len(df.columns)} columns.")
+                st.stop()
             questions = df.iloc[:, question_index].dropna().tolist()
         except Exception as e:
             st.error(f"Error processing file: {e}")
@@ -145,7 +140,6 @@ if st.button("Submit", key=f"submit_button_{st.session_state.ui_version}"):
 
     st.success(f"Processing {len(questions)} question(s)...")
 
-    import openai
     for idx, question in enumerate(questions, 1):
         prompt = (
             "You are an expert in Skyhigh Security products, providing highly detailed technical responses for an RFP. "
@@ -158,13 +152,18 @@ if st.button("Submit", key=f"submit_button_{st.session_state.ui_version}"):
             "### Direct Answer (from official Skyhigh docs):"
         )
 
-        response = openai.ChatCompletion.create(
-            model=selected_model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=800,
-            temperature=0.1
-        )
-        answer = clean_answer(response.choices[0].message.content.strip())
+        try:
+            response = openai.ChatCompletion.create(
+                model=selected_model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=800,
+                temperature=0.1
+            )
+            answer = clean_answer(response.choices[0].message.content.strip())
+        except Exception as e:
+            st.error(f"OpenAI call failed: {e}")
+            answer = "[ERROR: Unable to generate answer]"
+
         responses.append(answer)
 
         st.markdown(f"""
@@ -179,5 +178,4 @@ if st.button("Submit", key=f"submit_button_{st.session_state.ui_version}"):
         output = BytesIO()
         df.to_excel(output, index=False, engine="openpyxl")
         output.seek(0)
-        st.download_button("📥 Download Responses", data=output, file_name="RFP_Responses.xlsx")
-
+        st.download_button("📅 Download Responses", data=output, file_name="RFP_Responses.xlsx")
