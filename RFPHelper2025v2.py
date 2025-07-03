@@ -108,7 +108,7 @@ model_choice = st.radio(
 
 model_mapping = {
     "GPT-4o (Omni)": "gpt-4o",
-    "Due Diligence (Fine-Tuned)": "ft:gpt-3.5-turbo-0613:your-org:your-model-id"  # Replace with your model ID
+    "Due Diligence (Fine-Tuned)": "ft:gpt-4.1-nano-2025-04-14:personal:duediligence:BpAJQiAh"
 }
 selected_model = model_mapping[model_choice]
 
